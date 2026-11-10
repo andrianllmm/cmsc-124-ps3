@@ -36,15 +36,18 @@ name. Signal an error when NAME is not bound at all."
 
 MAPCAR and a LAMBDA do this in one line. Watch the arity: EVAL-EXPR takes two
 arguments and MAPCAR hands its function one."
-  (declare (ignore exprs env))
-  (error "eval-operands is not implemented"))
+  (mapcar (lambda (expr) (eval-expr expr env)) exprs))
 
 (defun apply-op (op values)
   "Apply the arithmetic operator OP to the two numbers in VALUES.
 
 OP is the symbol +, -, or *. Signal an error for anything else."
-  (declare (ignore op values))
-  (error "apply-op is not implemented"))
+  (destructuring-bind (a b) values
+    (case op
+      (+ (+ a b))
+      (- (- a b))
+      (* (* a b))
+      (otherwise (error "Unknown operator: ~S" op)))))
 
 ;;; E3 -- let.
 
@@ -91,5 +94,8 @@ CLOSURE is not a closure, and when the argument count does not match."
 
 Order the branches with care. NIL is a symbol as well as the empty list, and a
 number is not a cons, so the atom tests come before the list tests."
-  (declare (ignore expr env))
-  (error "eval-expr is not implemented"))
+  (cond
+    ;; TODO(E1): numbers and symbols go here, before the list tests.
+    ((and (consp expr) (member (first expr) '(+ - *)))
+     (apply-op (first expr) (eval-operands (rest expr) env)))
+    (t (error "Cannot evaluate: ~S" expr))))
