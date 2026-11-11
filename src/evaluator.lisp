@@ -19,15 +19,23 @@
 ;;;;         | (lambda (name ...) body)
 ;;;;         | (operator-expr argument-expr ...)
 
-;;; E1 -- numbers and symbols.
 
+;;; +--- E1 -- numbers and symbols. ---------------+
+;; lookup(item, alist)
+;; param item  - elem we are searching for
+;; param alist - list we are searching
 (defun lookup (name env)
-  "The value NAME is bound to in ENV.
 
-The first match wins, so an inner binding shadows an outer one that shares its
-name. Signal an error when NAME is not bound at all."
-  (declare (ignore name env))
-  (error "lookup is not implemented"))
+  ;; assoc(item, alist)
+  ;; param item  - elem we are searching for
+  ;; param alist - list we are searching
+  (let ((pair (assoc name env)))
+    ;; map name -> env_elem
+    (if pair  ;; if (name, env_elem) exists
+      (cdr pair)  ;; return env_elem
+      (error "Variable ~S is not in env." name))))
+;;; +--- E1 -- numbers and symbols. ---------------+
+
 
 ;;; E2 -- prefix arithmetic.
 
@@ -46,8 +54,13 @@ OP is the symbol +, -, or *. Signal an error for anything else."
   (declare (ignore op values))
   (error "apply-op is not implemented"))
 
-;;; E3 -- let.
 
+
+;;; +--- E3 -- let. ---------------+
+;; extend-env(params, args, env)
+;; param params - list of variable names
+;; param args   - list of evaluated values corresponding to params
+;; param env    - current environment list
 (defun extend-env (params args env)
   "ENV with PARAMS bound to ARGS in front of it.
 
@@ -63,6 +76,9 @@ Every init is evaluated in ENV before any name is bound, so the bindings happen
 in parallel and an init cannot see a name the same LET introduces."
   (declare (ignore expr env))
   (error "eval-let is not implemented"))
+;;; +--- E3 -- let. ---------------+
+
+
 
 ;;; E4 -- lambda and application.
 
@@ -91,5 +107,7 @@ CLOSURE is not a closure, and when the argument count does not match."
 
 Order the branches with care. NIL is a symbol as well as the empty list, and a
 number is not a cons, so the atom tests come before the list tests."
-  (declare (ignore expr env))
-  (error "eval-expr is not implemented"))
+  (cond
+    ((numberp expr) expr)
+    ((symbolp expr) (lookup expr env))
+    (t (error "Cannot evaluate: ~S" expr))))
