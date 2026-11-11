@@ -92,16 +92,20 @@ Return the list (:closure params body env). ENV is the environment the lambda
 was written in, not the one it will later be called from. Saving the wrong one
 is what makes the difference between 3 and 101 in the case the manual walks
 through."
-  (declare (ignore params body env))
-  (error "make-closure is not implemented"))
+  (list :closure params body env))
 
 (defun apply-closure (closure args)
   "Run CLOSURE on ARGS.
 
 The parameters join the environment the closure captured. Signal an error when
 CLOSURE is not a closure, and when the argument count does not match."
-  (declare (ignore closure args))
-  (error "apply-closure is not implemented"))
+  (unless (and (consp closure) (eq (first closure) :closure))
+    (error "Not a closure: ~S" closure))
+  (destructuring-bind (params body env) (rest closure)
+    (unless (= (length params) (length args))
+      (error "Expected ~D arguments, got ~D" (length params) (length args)))
+    ;; The closure's own ENV, never the caller's. This is what makes scope lexical.
+    (eval-expr body (extend-env params args env))))
 
 ;;; The dispatcher.
 
@@ -115,4 +119,10 @@ number is not a cons, so the atom tests come before the list tests."
     ((symbolp expr) (lookup expr env))
     ((and (consp expr) (member (first expr) '(+ - *)))
      (apply-op (first expr) (eval-operands (rest expr) env)))
+    ((and (consp expr) (eq (first expr) 'lambda))
+     (make-closure (second expr) (third expr) env))
+    ;; Application is the catch-all for lists, so it stays the last branch.
+    ((consp expr)
+     (apply-closure (eval-expr (first expr) env)
+                    (eval-operands (rest expr) env)))
     (t (error "Cannot evaluate: ~S" expr))))
