@@ -44,7 +44,7 @@ so there's no way for the closure to ever see it.
 ## What if we used the caller's environment
 
 If `apply-closure` extended the caller's environment instead, `lookup` would
-hit `(x . 100)` first and we'd get 101. That would make the toy language dynamically scoped, where a function uses whatever is bound when called instead of where it was written. The change is small but takes two edits: `apply-closure` would receive the closure's `env` as an extra parameter, and the application branch would pass the caller's `env` to it.
+hit `(x . 100)` first and we'd get 101. That would make the toy language dynamically scoped, where a function uses whatever is bound when called instead of where it was written. The change is small but takes two edits: `apply-closure` would receive the caller's `env` as an extra parameter, and the application branch would pass the caller's `env` to it.
 
 ## Why CLISP needs funcall
 
