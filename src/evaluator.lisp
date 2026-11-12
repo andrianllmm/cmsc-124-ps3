@@ -69,16 +69,19 @@ OP is the symbol +, -, or *. Signal an error for anything else."
 
 MAPCAR takes two lists and #'CONS pairs them. Build a new list. Do not modify
 ENV, because the caller keeps using it after the extension goes out of scope."
-  (declare (ignore params args env))
-  (error "extend-env is not implemented"))
+  (append (mapcar #'cons params args) env))
 
 (defun eval-let (expr env)
   "Evaluate (let ((name init) ...) body).
 
 Every init is evaluated in ENV before any name is bound, so the bindings happen
 in parallel and an init cannot see a name the same LET introduces."
-  (declare (ignore expr env))
-  (error "eval-let is not implemented"))
+  (let ((bindings (cadr expr))
+        (body (caddr expr)))
+    (eval-expr body
+                (extend-env (mapcar #'car bindings)
+                (mapcar (lambda (b) (eval-expr (cadr b) env)) bindings)
+                env))))
 ;;; +--- E3 -- let. ---------------+
 
 
@@ -121,6 +124,9 @@ number is not a cons, so the atom tests come before the list tests."
      (apply-op (first expr) (eval-operands (rest expr) env)))
     ((and (consp expr) (eq (first expr) 'lambda))
      (make-closure (second expr) (third expr) env))
+    ;; let expressions to eval-let
+    ((and (consp expr) (eq (first expr) 'let))
+      (eval-let expr env))
     ;; Application is the catch-all for lists, so it stays the last branch.
     ((consp expr)
      (apply-closure (eval-expr (first expr) env)
